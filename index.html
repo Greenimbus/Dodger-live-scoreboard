@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Dodgers Live Scoreboard</title>
+<style>
+  body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; background: #0b1020; color: #e7ecff; margin: 0; padding: 16px; }
+  .card { background: #121733; border:1px solid #263067; border-radius: 14px; padding: 14px; box-shadow: 0 8px 24px rgba(0,0,0,.25); margin-bottom: 14px; }
+  h1 { margin: 4px 0 12px; font-size: 22px; }
+  h2 { margin: 0 0 8px; font-size: 18px; }
+  p { margin: 6px 0; }
+  .muted { color: #9aa3c7; }
+</style>
+</head>
+<body>
+  <h1>Dodgers Live Scoreboard</h1>
+  <div id="output" class="card">Loading…</div>
+
+  <script>
+    const API_URL = "https://dodger-live-scoreboard.onrender.com"; // replace after deploying
+
+    async function fetchData() {
+      try {
+        const res = await fetch(API_URL);
+        const data = await res.json();
+        const out = document.getElementById("output");
+
+        if (data.nextGame) {
+          const g = data.nextGame;
+          const dt = new Date(g.date);
+          out.innerHTML = `
+            <h2>Next Game</h2>
+            <p><strong>Opponent:</strong> ${g.opponent}</p>
+            <p><strong>When:</strong> ${dt.toLocaleString()}</p>
+            <p class="muted">Venue: ${g.venue || "TBA"}</p>
+          `;
+          return;
+        }
+
+        if (data.liveGame) {
+          const g = data.liveGame;
+          out.innerHTML = `
+            <h2>${g.away.team} (${g.away.score}) @ ${g.home.team} (${g.home.score})</h2>
+            <p><strong>Inning:</strong> ${g.inning || "—"}</p>
+            <p><strong>Starters:</strong> ${Object.entries(g.starters).map(([k,v]) => `${k}: ${v || "—"}`).join(" | ")}</p>
+            <p><strong>Now Pitching:</strong> ${g.currentPitcher || "—"}</p>
+            <p><strong>At Bat:</strong> ${g.currentBatter || "—"}</p>
+            ${g.runners ? `<p><strong>Runners:</strong> ${g.runners.join(" | ")}</p>` : ""}
+            <p><strong>Last Play:</strong> ${g.lastPlay || "—"}</p>
+            ${g.starterMismatch ? `<p class="muted"><em>Starter updated from probables</em></p>` : ""}
+          `;
+          return;
+        }
+
+        out.textContent = "No game info available.";
+      } catch (e) {
+        document.getElementById("output").textContent = "Error loading data.";
+      }
+    }
+
+    fetchData();
+    setInterval(fetchData, 5000);
+  </script>
+</body>
+</html>
